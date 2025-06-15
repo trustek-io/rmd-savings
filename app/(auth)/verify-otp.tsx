@@ -1,5 +1,5 @@
-// app/(auth)/verify-otp.tsx
-import React, { useState, useEffect, useRef } from 'react';
+// app/(auth)/verify-otp.tsx - FIXED VERSION
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -11,6 +11,7 @@ import {
     ActivityIndicator,
     StyleSheet,
     Dimensions,
+    ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -25,40 +26,44 @@ export default function VerifyOTPScreen() {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [isLoading, setIsLoading] = useState(false);
     const [isResending, setIsResending] = useState(false);
-    const [countdown, setCountdown] = useState(30);
     const [canResend, setCanResend] = useState(false);
-
+    const [countdown, setCountdown] = useState(30);
     const inputRefs = useRef<(TextInput | null)[]>([]);
 
     useEffect(() => {
-        // Start countdown timer
-        const timer = setInterval(() => {
-            setCountdown((prev) => {
-                if (prev <= 1) {
-                    setCanResend(true);
-                    clearInterval(timer);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, []);
-
-    const handleOtpChange = (value: string, index: number) => {
-        const newOtp = [...otp];
-        newOtp[index] = value;
-        setOtp(newOtp);
-
-        // Auto-focus next input
-        if (value && index < 5) {
-            inputRefs.current[index + 1]?.focus();
+        if (countdown > 0) {
+            const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+            return () => clearTimeout(timer);
+        } else {
+            setCanResend(true);
         }
+    }, [countdown]);
 
-        // Auto-submit when all fields are filled
-        if (newOtp.every(digit => digit !== '') && value) {
-            handleVerifyOTP(newOtp);
+    const handleOtpChange = (text: string, index: number) => {
+        if (text.length > 1) {
+            // Handle paste
+            const pastedOtp = text.slice(0, 6).split('');
+            const newOtp = [...otp];
+            pastedOtp.forEach((char, i) => {
+                if (index + i < 6) {
+                    newOtp[index + i] = char;
+                }
+            });
+            setOtp(newOtp);
+
+            // Focus last filled input or next empty
+            const nextIndex = Math.min(index + pastedOtp.length, 5);
+            inputRefs.current[nextIndex]?.focus();
+        } else {
+            // Single character input
+            const newOtp = [...otp];
+            newOtp[index] = text;
+            setOtp(newOtp);
+
+            // Auto focus next input
+            if (text && index < 5) {
+                inputRefs.current[index + 1]?.focus();
+            }
         }
     };
 
@@ -68,13 +73,11 @@ export default function VerifyOTPScreen() {
         }
     };
 
-    const handleVerifyOTP = async (otpArray: string[] = otp) => {
-        const otpCode = otpArray.join('');
-
-        console.log('Verifying OTP:', otpCode);
+    const handleVerifyOTP = async () => {
+        const otpCode = otp.join('');
 
         if (otpCode.length !== 6) {
-            Alert.alert('Invalid code', 'Please enter the complete 6-digit code.');
+            Alert.alert('Invalid code', 'Please enter the complete 6-digit verification code.');
             return;
         }
 
@@ -155,126 +158,118 @@ export default function VerifyOTPScreen() {
         }
     };
 
-    const containerStyle = isLargeScreen ?
-        [styles.container, styles.webContainer] :
-        styles.container;
-
-    const contentStyle = isLargeScreen ?
-        [styles.content, styles.webContent] :
-        styles.content;
-
     return (
-        <SafeAreaView style={containerStyle}>
+        <SafeAreaView style={styles.container}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardContainer}
             >
-                {isLargeScreen && <View style={styles.webSpacer} />}
-                <View style={contentStyle}>
-                    {/* Back Button */}
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => router.back()}
-                        disabled={isLoading}
-                    >
-                        <Ionicons name="arrow-back" size={24} color="#6366f1" />
-                    </TouchableOpacity>
-
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <LinearGradient
-                            colors={['#6366f1', '#3b82f6']}
-                            style={styles.iconContainer}
+                <ScrollView
+                    contentContainerStyle={styles.scrollContainer}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {/* Main Content */}
+                    <View style={styles.content}>
+                        {/* Back Button */}
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => router.back()}
                         >
-                            <Ionicons name="mail" size={32} color="white" />
-                        </LinearGradient>
+                            <Ionicons name="arrow-back" size={24} color="#6366f1" />
+                        </TouchableOpacity>
 
-                        <Text style={styles.title}>Check your email</Text>
-                        <Text style={styles.subtitle}>
-                            We sent a 6-digit code to{'\n'}
-                            <Text style={styles.email}>{email}</Text>
-                        </Text>
-                    </View>
-
-                    {/* OTP Input */}
-                    <View style={styles.otpContainer}>
-                        <Text style={styles.inputLabel}>Verification Code</Text>
-                        <View style={styles.otpInputs}>
-                            {otp.map((digit, index) => (
-                                <TextInput
-                                    key={index}
-                                    ref={(ref) => (inputRefs.current[index] = ref)}
-                                    style={[
-                                        styles.otpInput,
-                                        digit && styles.otpInputFilled,
-                                        isLoading && styles.otpInputDisabled
-                                    ]}
-                                    value={digit}
-                                    onChangeText={(value) => handleOtpChange(value.slice(-1), index)}
-                                    onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
-                                    keyboardType="number-pad"
-                                    maxLength={1}
-                                    selectTextOnFocus
-                                    editable={!isLoading}
-                                />
-                            ))}
-                        </View>
-                    </View>
-
-                    {/* Verify Button */}
-                    <TouchableOpacity
-                        onPress={() => {
-                            console.log('Verify button clicked!');
-                            handleVerifyOTP();
-                        }}
-                        disabled={isLoading || otp.some(digit => !digit)}
-                        style={[
-                            styles.verifyButton,
-                            (isLoading || otp.some(digit => !digit)) && styles.verifyButtonDisabled
-                        ]}
-                    >
-                        {isLoading ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <>
-                                <Text style={styles.verifyButtonText}>Verify</Text>
-                                <Ionicons name="checkmark" size={20} color="white" />
-                            </>
-                        )}
-                    </TouchableOpacity>
-
-                    {/* Resend Code */}
-                    <View style={styles.resendContainer}>
-                        {canResend ? (
-                            <TouchableOpacity
-                                onPress={handleResendOTP}
-                                disabled={isResending}
-                                style={styles.resendButton}
+                        {/* Header */}
+                        <View style={styles.header}>
+                            <LinearGradient
+                                colors={['#6366f1', '#3b82f6']}
+                                style={styles.iconContainer}
                             >
-                                {isResending ? (
-                                    <ActivityIndicator size="small" color="#6366f1" />
+                                <Ionicons name="mail" size={32} color="white" />
+                            </LinearGradient>
+
+                            <Text style={styles.title}>Check your email</Text>
+                            <Text style={styles.subtitle}>
+                                We sent a verification code to{'\n'}
+                                <Text style={styles.email}>{email}</Text>
+                            </Text>
+                        </View>
+
+                        {/* OTP Input */}
+                        <View style={styles.otpContainer}>
+                            <Text style={styles.inputLabel}>Enter verification code</Text>
+
+                            <View style={styles.otpInputs}>
+                                {otp.map((digit, index) => (
+                                    <TextInput
+                                        key={index}
+                                        ref={(ref) => inputRefs.current[index] = ref}
+                                        style={[
+                                            styles.otpInput,
+                                            digit && styles.otpInputFilled,
+                                            isLoading && styles.otpInputDisabled
+                                        ]}
+                                        value={digit}
+                                        onChangeText={(text) => handleOtpChange(text, index)}
+                                        onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
+                                        keyboardType="number-pad"
+                                        maxLength={6} // Allow paste
+                                        selectTextOnFocus
+                                        editable={!isLoading}
+                                        autoComplete="one-time-code"
+                                    />
+                                ))}
+                            </View>
+
+                            <TouchableOpacity
+                                onPress={handleVerifyOTP}
+                                disabled={isLoading || otp.join('').length !== 6}
+                                style={[
+                                    styles.verifyButton,
+                                    (isLoading || otp.join('').length !== 6) && styles.verifyButtonDisabled
+                                ]}
+                            >
+                                {isLoading ? (
+                                    <ActivityIndicator color="white" />
                                 ) : (
-                                    <Text style={styles.resendText}>Resend code</Text>
+                                    <>
+                                        <Text style={styles.verifyButtonText}>Verify Code</Text>
+                                        <Ionicons name="checkmark" size={20} color="white" />
+                                    </>
                                 )}
                             </TouchableOpacity>
-                        ) : (
-                            <Text style={styles.countdownText}>
-                                Resend code in {countdown}s
-                            </Text>
-                        )}
+
+                            {/* Resend Section */}
+                            <View style={styles.resendContainer}>
+                                {canResend ? (
+                                    <TouchableOpacity
+                                        onPress={handleResendOTP}
+                                        disabled={isResending}
+                                        style={styles.resendButton}
+                                    >
+                                        <Text style={styles.resendText}>
+                                            {isResending ? 'Sending...' : 'Resend code'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ) : (
+                                    <Text style={styles.countdownText}>
+                                        Resend code in {countdown}s
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
                     </View>
 
                     {/* Security Footer */}
                     <View style={styles.securityNote}>
                         <View style={styles.securityContainer}>
-                            <Ionicons name="time" size={16} color="#6366f1" />
+                            <Ionicons name="shield-checkmark" size={16} color="#6366f1" />
                             <Text style={styles.securityText}>
-                                Code expires in 10 minutes for your security
+                                Your verification code expires in 10 minutes
                             </Text>
                         </View>
                     </View>
-                </View>
-                {isLargeScreen && <View style={styles.webSpacer} />}
+                </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -285,35 +280,29 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'white',
     },
-    webContainer: {
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        paddingTop: 40,
-    },
     keyboardContainer: {
         flex: 1,
-        width: '100%',
-        alignItems: isLargeScreen ? 'center' : 'stretch',
     },
-    webSpacer: {
-        flex: 0.2,
+    scrollContainer: {
+        flexGrow: 1,
+        justifyContent: isLargeScreen ? 'center' : 'space-between',
+        paddingHorizontal: isLargeScreen ? 0 : 24,
+        paddingVertical: isLargeScreen ? 60 : 20, // More top padding for web
+        minHeight: isLargeScreen ? '100%' : undefined,
     },
     content: {
-        flex: isLargeScreen ? 0 : 1,
-        paddingHorizontal: 24,
-        justifyContent: 'center',
+        maxWidth: isLargeScreen ? 400 : '100%',
         width: '100%',
-    },
-    webContent: {
-        maxWidth: 400,
-        width: '100%',
-        paddingHorizontal: 32,
         alignSelf: 'center',
+        flex: isLargeScreen ? 0 : 1,
+        justifyContent: isLargeScreen ? 'center' : 'flex-start',
+        paddingHorizontal: isLargeScreen ? 32 : 0,
     },
     backButton: {
         alignSelf: 'flex-start',
         padding: 8,
         marginBottom: 24,
+        marginLeft: isLargeScreen ? -8 : 0,
     },
     header: {
         alignItems: 'center',
@@ -331,7 +320,8 @@ const styles = StyleSheet.create({
         fontSize: 32,
         fontWeight: 'bold',
         color: '#171717',
-        marginBottom: 8,
+        marginBottom: 12,
+        textAlign: 'center',
     },
     subtitle: {
         fontSize: 16,
@@ -357,9 +347,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 32,
+        gap: isLargeScreen ? 12 : 8,
     },
     otpInput: {
-        width: 50,
+        flex: 1,
         height: 56,
         borderWidth: 2,
         borderColor: '#e5e5e5',
@@ -368,6 +359,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         backgroundColor: '#fafafa',
+        color: '#171717',
     },
     otpInputFilled: {
         borderColor: '#6366f1',
@@ -412,9 +404,9 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     securityNote: {
-        paddingHorizontal: 0,
-        paddingTop: 16,
-        paddingBottom: 0,
+        paddingHorizontal: isLargeScreen ? 32 : 0,
+        paddingBottom: isLargeScreen ? 0 : 20,
+        marginTop: isLargeScreen ? 40 : 0,
     },
     securityContainer: {
         backgroundColor: '#f8f9ff',

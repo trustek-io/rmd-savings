@@ -1,4 +1,4 @@
-// app/(auth)/signup.tsx
+// app/(auth)/signup.tsx - FIXED VERSION
 import React, { useState } from 'react';
 import {
     View,
@@ -11,6 +11,7 @@ import {
     ActivityIndicator,
     StyleSheet,
     Dimensions,
+    ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
@@ -76,116 +77,113 @@ export default function SignupScreen() {
         }
     };
 
-    const containerStyle = isLargeScreen ?
-        [styles.container, styles.webContainer] :
-        styles.container;
-
-    const contentStyle = isLargeScreen ?
-        [styles.content, styles.webContent] :
-        styles.content;
-
     return (
-        <SafeAreaView style={containerStyle}>
+        <SafeAreaView style={styles.container}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardContainer}
             >
-                {isLargeScreen && <View style={styles.webSpacer} />}
-                <View style={contentStyle}>
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <LinearGradient
-                            colors={['#6366f1', '#3b82f6']}
-                            style={styles.iconContainer}
-                        >
-                            <Ionicons name="rocket" size={32} color="white" />
-                        </LinearGradient>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContainer}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {/* Main Content */}
+                    <View style={styles.content}>
+                        {/* Header */}
+                        <View style={styles.header}>
+                            <LinearGradient
+                                colors={['#6366f1', '#3b82f6']}
+                                style={styles.iconContainer}
+                            >
+                                <Ionicons name="wallet" size={32} color="white" />
+                            </LinearGradient>
 
-                        <Text style={styles.title}>Start investing</Text>
-                        <Text style={styles.subtitle}>
-                            Enter your email to get started with crypto investing
-                        </Text>
-                    </View>
-
-                    {/* Email Form */}
-                    <View style={styles.form}>
-                        <Text style={styles.inputLabel}>Email Address</Text>
-                        <TextInput
-                            value={email}
-                            onChangeText={(value) => {
-                                setEmail(value);
-                                // Clear error when user starts typing
-                                if (emailError) setEmailError('');
-                            }}
-                            placeholder="Enter your email address"
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            autoFocus
-                            style={[
-                                styles.textInput,
-                                emailError && styles.textInputError
-                            ]}
-                            editable={!isLoading}
-                        />
-
-                        {emailError ? (
-                            <View style={styles.errorContainer}>
-                                <Ionicons name="alert-circle" size={16} color="#dc2626" />
-                                <Text style={styles.errorText}>{emailError}</Text>
-                            </View>
-                        ) : null}
-
-                        <TouchableOpacity
-                            onPress={() => {
-                                console.log('Button pressed!');
-                                handleSignup();
-                            }}
-                            disabled={isLoading}
-                            style={[
-                                styles.signupButton,
-                                isLoading && styles.signupButtonDisabled
-                            ]}
-                        >
-                            {isLoading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <>
-                                    <Text style={styles.signupButtonText}>Continue</Text>
-                                    <Ionicons name="arrow-forward" size={20} color="white" />
-                                </>
-                            )}
-                        </TouchableOpacity>
-
-                        <Text style={styles.helperText}>
-                            We'll send you a verification code to confirm your email
-                        </Text>
-                    </View>
-
-                    {/* Footer */}
-                    <View style={styles.footer}>
-                        <Text style={styles.footerText}>Already have an account?</Text>
-                        <Link href="/(auth)/login" asChild>
-                            <TouchableOpacity disabled={isLoading}>
-                                <Text style={styles.signinLink}>Sign in</Text>
-                            </TouchableOpacity>
-                        </Link>
-                    </View>
-                </View>
-                {isLargeScreen && <View style={styles.webSpacer} />}
-
-                {/* Security Footer */}
-                <View style={styles.securityNote}>
-                    <View style={styles.securityContainer}>
-                        <View style={styles.securityHeader}>
-                            <Ionicons name="shield-checkmark" size={20} color="#6366f1" />
-                            <Text style={styles.securityTitle}>Secure & Fast</Text>
+                            <Text style={styles.title}>Create account</Text>
+                            <Text style={styles.subtitle}>
+                                Join RampMeDaddy and start your crypto investing journey
+                            </Text>
                         </View>
-                        <Text style={styles.securityText}>
-                            Get started in under 30 seconds with bank-level security
-                        </Text>
+
+                        {/* Form */}
+                        <View style={styles.form}>
+                            <Text style={styles.inputLabel}>Email address</Text>
+                            <TextInput
+                                style={[
+                                    styles.textInput,
+                                    emailError && styles.textInputError
+                                ]}
+                                placeholder="Enter your email"
+                                placeholderTextColor="#9ca3af"
+                                value={email}
+                                onChangeText={(text) => {
+                                    setEmail(text);
+                                    if (emailError) setEmailError('');
+                                }}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                autoComplete="email"
+                                editable={!isLoading}
+                            />
+
+                            {emailError && (
+                                <View style={styles.errorContainer}>
+                                    <Ionicons name="alert-circle" size={16} color="#dc2626" />
+                                    <Text style={styles.errorText}>{emailError}</Text>
+                                </View>
+                            )}
+
+                            <TouchableOpacity
+                                onPress={() => {
+                                    console.log('Signup button pressed with email:', email, 'isLoading:', isLoading);
+                                    handleSignup();
+                                }}
+                                disabled={isLoading}
+                                style={[
+                                    styles.signupButton,
+                                    isLoading && styles.signupButtonDisabled
+                                ]}
+                            >
+                                {isLoading ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <>
+                                        <Text style={styles.signupButtonText}>Continue</Text>
+                                        <Ionicons name="arrow-forward" size={20} color="white" />
+                                    </>
+                                )}
+                            </TouchableOpacity>
+
+                            <Text style={styles.helperText}>
+                                We'll send you a verification code to confirm your email
+                            </Text>
+                        </View>
+
+                        {/* Footer */}
+                        <View style={styles.footer}>
+                            <Text style={styles.footerText}>Already have an account?</Text>
+                            <Link href="/(auth)/login" asChild>
+                                <TouchableOpacity disabled={isLoading}>
+                                    <Text style={styles.signinLink}>Sign in</Text>
+                                </TouchableOpacity>
+                            </Link>
+                        </View>
                     </View>
-                </View>
+
+                    {/* Security Footer */}
+                    <View style={styles.securityNote}>
+                        <View style={styles.securityContainer}>
+                            <View style={styles.securityHeader}>
+                                <Ionicons name="shield-checkmark" size={20} color="#6366f1" />
+                                <Text style={styles.securityTitle}>Secure & Fast</Text>
+                            </View>
+                            <Text style={styles.securityText}>
+                                Get started in under 30 seconds with bank-level security
+                            </Text>
+                        </View>
+                    </View>
+                </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -196,30 +194,23 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'white',
     },
-    webContainer: {
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        paddingTop: 40,
-    },
     keyboardContainer: {
         flex: 1,
-        width: '100%',
-        alignItems: isLargeScreen ? 'center' : 'stretch',
     },
-    webSpacer: {
-        flex: 0.3,
+    scrollContainer: {
+        flexGrow: 1,
+        justifyContent: isLargeScreen ? 'center' : 'space-between',
+        paddingHorizontal: isLargeScreen ? 0 : 24,
+        paddingVertical: isLargeScreen ? 40 : 20,
+        minHeight: isLargeScreen ? '100%' : undefined,
     },
     content: {
-        flex: isLargeScreen ? 0 : 1,
-        paddingHorizontal: 24,
-        justifyContent: 'center',
+        maxWidth: isLargeScreen ? 400 : '100%',
         width: '100%',
-    },
-    webContent: {
-        maxWidth: 400,
-        width: '100%',
-        paddingHorizontal: 32,
         alignSelf: 'center',
+        flex: isLargeScreen ? 0 : 1,
+        justifyContent: isLargeScreen ? 'center' : 'flex-start',
+        paddingHorizontal: isLargeScreen ? 32 : 0,
     },
     header: {
         alignItems: 'center',
@@ -238,6 +229,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#171717',
         marginBottom: 8,
+        textAlign: 'center',
     },
     subtitle: {
         fontSize: 18,
@@ -263,6 +255,7 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         fontSize: 18,
         marginBottom: 8,
+        color: '#171717',
     },
     textInputError: {
         borderColor: '#dc2626',
@@ -304,10 +297,12 @@ const styles = StyleSheet.create({
     },
     footer: {
         alignItems: 'center',
+        marginBottom: isLargeScreen ? 0 : 20,
     },
     footerText: {
         color: '#525252',
         marginBottom: 8,
+        fontSize: 16,
     },
     signinLink: {
         color: '#6366f1',
@@ -315,16 +310,17 @@ const styles = StyleSheet.create({
         fontSize: 18,
     },
     securityNote: {
-        paddingHorizontal: isLargeScreen ? 32 : 24,
-        paddingBottom: 24,
+        paddingHorizontal: isLargeScreen ? 32 : 0,
+        paddingBottom: isLargeScreen ? 0 : 20,
+        marginTop: isLargeScreen ? 40 : 0,
     },
     securityContainer: {
         backgroundColor: '#f8f9ff',
         borderRadius: 12,
         padding: 16,
-        maxWidth: isLargeScreen ? 400 : '100%',
         alignSelf: 'center',
         width: '100%',
+        maxWidth: isLargeScreen ? 400 : '100%',
     },
     securityHeader: {
         flexDirection: 'row',
@@ -340,5 +336,6 @@ const styles = StyleSheet.create({
     securityText: {
         fontSize: 12,
         color: '#525252',
+        lineHeight: 16,
     },
 });

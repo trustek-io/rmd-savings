@@ -3,225 +3,85 @@ import React, { useState } from 'react';
 import {
     View,
     Text,
+    ScrollView,
     StyleSheet,
     TouchableOpacity,
-    ScrollView,
     Dimensions,
     Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import DonutChart from '../components/DonutChart';
 
 const { width: screenWidth } = Dimensions.get('window');
 const isLargeScreen = screenWidth > 768;
 
-// Mock data for crypto portfolio
-const portfolioData = [
-    { name: 'Bitcoin', symbol: 'BTC', percentage: 45, color: '#F7931A', amount: '$22,444.50' },
-    { name: 'Ethereum', symbol: 'ETH', percentage: 30, color: '#627EEA', amount: '$14,963.00' },
-    { name: 'Solana', symbol: 'SOL', percentage: 15, color: '#9945FF', amount: '$7,481.50' },
-    { name: 'USDC Stablecoin', symbol: 'USDC', percentage: 10, color: '#2775CA', amount: '$4,987.67' },
-];
-
-// Mock data for activity
+// Sample activity data
 const activityData = [
     {
         id: 1,
-        date: '06/10/2025',
-        type: 'Auto-Invest',
-        description: 'Your weekly auto-investment of $125.00.',
-        amount: '$125.00',
+        date: 'Jun 14',
+        type: 'Weekly Auto-Invest',
+        description: 'Auto-invest from Chase Bank ••••8274',
+        amount: '$143.55',
         color: '#14b8a6',
-        expanded: false,
         details: {
-            userAmount: '$75.00',
-            employerAmount: '$50.00',
             breakdown: [
-                { name: 'Bitcoin', symbol: 'BTC', shares: '0.00156', price: '$48,077.23', amount: '$56.25' },
-                { name: 'Ethereum', symbol: 'ETH', shares: '0.01124', price: '$3,340.67', amount: '$37.50' },
-                { name: 'Solana', symbol: 'SOL', shares: '0.1089', price: '$172.45', amount: '$18.75' },
-                { name: 'USDC Stablecoin', symbol: 'USDC', shares: '12.50', price: '$1.00', amount: '$12.50' },
+                { name: 'Bitcoin', symbol: 'BTC', shares: '0.00218', price: '$67,425.00', amount: '$147.00' },
+                { name: 'Ethereum', symbol: 'ETH', shares: '0.02891', price: '$3,456.00', amount: '$99.90' },
+                { name: 'Solana', symbol: 'SOL', shares: '0.7234', price: '$138.50', amount: '$100.20' },
             ]
         }
     },
     {
         id: 2,
-        date: '06/09/2025',
+        date: 'Jun 13',
         type: 'Staking Rewards',
-        description: 'Your crypto earned $8.43 in staking rewards.',
-        amount: '$8.43',
-        color: '#14b8a6',
-        expanded: false,
+        description: 'Ethereum staking rewards earned',
+        amount: '$12.34',
+        color: '#8b5cf6',
     },
     {
         id: 3,
-        date: '06/07/2025',
-        type: 'Rebalance',
-        description: 'Your portfolio was rebalanced to maintain your investment settings.',
-        amount: null,
-        color: '#f59e0b',
-        expanded: false,
-    },
-    {
-        id: 4,
-        date: '06/03/2025',
-        type: 'Auto-Invest',
-        description: 'Your weekly auto-investment of $125.00.',
-        amount: '$125.00',
-        color: '#14b8a6',
-        expanded: false,
-        details: {
-            userAmount: '$75.00',
-            employerAmount: '$50.00',
-            breakdown: [
-                { name: 'Bitcoin', symbol: 'BTC', shares: '0.00162', price: '$46,296.30', amount: '$56.25' },
-                { name: 'Ethereum', symbol: 'ETH', shares: '0.01167', price: '$3,214.87', amount: '$37.50' },
-                { name: 'Solana', symbol: 'SOL', shares: '0.1124', price: '$166.89', amount: '$18.75' },
-                { name: 'USDC Stablecoin', symbol: 'USDC', shares: '12.50', price: '$1.00', amount: '$12.50' },
-            ]
-        }
-    },
-    {
-        id: 5,
-        date: '06/01/2025',
-        type: 'Network Fees',
-        description: 'You paid $2.18 in transaction fees for portfolio rebalancing.',
-        amount: '-$2.18',
-        color: '#6b7280',
-        expanded: false,
-    },
-    {
-        id: 6,
-        date: '05/27/2025',
-        type: 'Auto-Invest',
-        description: 'Your weekly auto-investment of $125.00.',
-        amount: '$125.00',
-        color: '#14b8a6',
-        expanded: false,
-        details: {
-            userAmount: '$75.00',
-            employerAmount: '$50.00',
-            breakdown: [
-                { name: 'Bitcoin', symbol: 'BTC', shares: '0.00168', price: '$44,642.86', amount: '$56.25' },
-                { name: 'Ethereum', symbol: 'ETH', shares: '0.01203', price: '$3,117.24', amount: '$37.50' },
-                { name: 'Solana', symbol: 'SOL', shares: '0.1178', price: '$159.16', amount: '$18.75' },
-                { name: 'USDC Stablecoin', symbol: 'USDC', shares: '12.50', price: '$1.00', amount: '$12.50' },
-            ]
-        }
+        date: 'Jun 12',
+        type: 'Manual Deposit',
+        description: 'Manual deposit from savings account',
+        amount: '$500.00',
+        color: '#06b6d4',
     },
 ];
 
-export default function DashboardScreen() {
-    const [activeTab, setActiveTab] = useState('Overview');
-    const [expandedActivity, setExpandedActivity] = useState<number | null>(1); // First item expanded by default
-    const [kycCompleted, setKycCompleted] = useState(false); // Track KYC status
+// Portfolio data with colors for chart
+const portfolioData = [
+    { name: 'Bitcoin', symbol: 'BTC', percentage: 42, amount: '$20,948.40', color: '#f97316' },
+    { name: 'Ethereum', symbol: 'ETH', percentage: 28, amount: '$13,965.47', color: '#8b5cf6' },
+    { name: 'Solana', symbol: 'SOL', percentage: 18, amount: '$8,977.80', color: '#06b6d4' },
+    { name: 'USDC', symbol: 'USDC', percentage: 12, amount: '$5,984.00', color: '#10b981' },
+];
 
-    const tabs = ['Overview', 'Portfolio', 'Transactions', 'Settings'];
+export default function Dashboard() {
+    const router = useRouter();
+    const [expandedActivity, setExpandedActivity] = useState(null);
+    const [isKYCRequired, setIsKYCRequired] = useState(true); // Set to true to show KYC banner
 
-    const handleLogout = () => {
-        router.replace('/(auth)/login');
-    };
-
-    const handleActivityToggle = (id: number) => {
-        setExpandedActivity(expandedActivity === id ? null : id);
-    };
-
-    const DonutChart = () => {
-        return (
-            <View style={styles.chartContainer}>
-                <View style={styles.donutChart}>
-                    {/* Bitcoin - 45% */}
-                    <View style={[styles.chartSegment, {
-                        borderTopColor: '#F7931A',
-                        borderRightColor: '#F7931A',
-                        borderBottomColor: 'transparent',
-                        borderLeftColor: 'transparent',
-                        transform: [{ rotate: '-90deg' }]
-                    }]} />
-
-                    {/* Ethereum - 30% */}
-                    <View style={[styles.chartSegment, {
-                        borderTopColor: '#627EEA',
-                        borderRightColor: 'transparent',
-                        borderBottomColor: 'transparent',
-                        borderLeftColor: 'transparent',
-                        transform: [{ rotate: '72deg' }]
-                    }]} />
-
-                    {/* Solana - 15% */}
-                    <View style={[styles.chartSegment, {
-                        borderTopColor: '#9945FF',
-                        borderRightColor: 'transparent',
-                        borderBottomColor: 'transparent',
-                        borderLeftColor: 'transparent',
-                        transform: [{ rotate: '180deg' }]
-                    }]} />
-
-                    {/* USDC - 10% */}
-                    <View style={[styles.chartSegment, {
-                        borderTopColor: '#2775CA',
-                        borderRightColor: 'transparent',
-                        borderBottomColor: 'transparent',
-                        borderLeftColor: 'transparent',
-                        transform: [{ rotate: '234deg' }]
-                    }]} />
-
-                    {/* Center hole */}
-                    <View style={styles.chartCenter} />
-                </View>
-            </View>
-        );
+    const handleActivityToggle = (activityId) => {
+        setExpandedActivity(expandedActivity === activityId ? null : activityId);
     };
 
     const containerStyle = isLargeScreen ? [styles.container, styles.webContainer] : styles.container;
+    const scrollContentStyle = isLargeScreen ? styles.webScrollContent : styles.mobileScrollContent;
 
     return (
-        <SafeAreaView style={containerStyle}>
-            {/* Header Navigation */}
-            <View style={styles.header}>
-                <View style={styles.logoContainer}>
-                    <LinearGradient
-                        colors={['#6366f1', '#3b82f6']}
-                        style={styles.logo}
-                    >
-                        <Ionicons name="trending-up" size={24} color="white" />
-                    </LinearGradient>
-                    <Text style={styles.appName}>RampMeDaddy</Text>
-                </View>
-
-                <View style={styles.navTabs}>
-                    {tabs.map((tab) => (
-                        <TouchableOpacity
-                            key={tab}
-                            style={[styles.navTab, activeTab === tab && styles.activeNavTab]}
-                            onPress={() => setActiveTab(tab)}
-                        >
-                            <Text style={[styles.navTabText, activeTab === tab && styles.activeNavTabText]}>
-                                {tab}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-
-                <TouchableOpacity onPress={handleLogout} style={styles.userSection}>
-                    <Text style={styles.userName}>Your Name</Text>
-                    <Ionicons name="chevron-down" size={16} color="#6b7280" />
-                </TouchableOpacity>
-            </View>
-
+        <SafeAreaView style={containerStyle} edges={['top']}>
             <ScrollView
-                style={styles.content}
-                contentContainerStyle={[
-                    styles.scrollContent,
-                    isLargeScreen && styles.webScrollContent,
-                    !isLargeScreen && styles.mobileScrollContent // Add bottom padding for mobile nav
-                ]}
+                style={styles.scrollView}
+                contentContainerStyle={scrollContentStyle}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Setup Banner - only show if KYC not completed */}
-                {!kycCompleted && (
+                {/* KYC Security Banner */}
+                {isKYCRequired && (
                     <View style={styles.securityBanner}>
                         <View style={styles.securityIconContainer}>
                             <Ionicons name="document-text" size={24} color="#0f172a" />
@@ -326,14 +186,9 @@ export default function DashboardScreen() {
                         </View>
                     </View>
 
-                    {/* Portfolio Breakdown */}
+                    {/* Portfolio */}
                     <View style={styles.portfolioCard}>
-                        <View style={styles.cardHeader}>
-                            <Text style={styles.cardTitle}>Portfolio</Text>
-                            <TouchableOpacity>
-                                <Text style={styles.viewMoreLink}>View More</Text>
-                            </TouchableOpacity>
-                        </View>
+                        <Text style={styles.cardTitle}>Portfolio</Text>
 
                         <View style={styles.portfolioContent}>
                             <View style={styles.chartSection}>
@@ -426,10 +281,10 @@ export default function DashboardScreen() {
 
                                             <View style={styles.contributionRow}>
                                                 <View style={styles.contributionColumn}>
-                                                    <Text style={styles.contributionLabel}>CRYPTO</Text>
-                                                    <Text style={styles.contributionLabel}>SHARES</Text>
-                                                    <Text style={styles.contributionLabel}>PRICE</Text>
-                                                    <Text style={styles.contributionLabel}>AMOUNT</Text>
+                                                    <Text style={styles.contributionLabel}>Asset</Text>
+                                                    <Text style={styles.contributionLabel}>Shares</Text>
+                                                    <Text style={styles.contributionLabel}>Price</Text>
+                                                    <Text style={styles.contributionLabel}>Amount</Text>
                                                 </View>
                                             </View>
 
@@ -447,33 +302,34 @@ export default function DashboardScreen() {
 
                                             <View style={styles.subtotalRow}>
                                                 <Text style={styles.subtotalLabel}>SUBTOTAL</Text>
-                                                <Text style={styles.subtotalAmount}>{activity.details.userAmount}</Text>
+                                                <Text style={styles.subtotalAmount}>$347.10</Text>
                                             </View>
+                                        </View>
 
-                                            <View style={styles.employerSection}>
-                                                <Text style={styles.detailsTitle}>EMPLOYER MATCH</Text>
+                                        {/* Employer Match Section */}
+                                        <View style={styles.employerSection}>
+                                            <Text style={styles.detailsTitle}>EMPLOYER MATCH</Text>
 
-                                                {activity.details.breakdown.map((item, index) => {
-                                                    const employerShares = (parseFloat(item.shares) * 0.67).toFixed(5);
-                                                    const employerAmount = (parseFloat(item.amount.replace('$', '')) * 0.67).toFixed(2);
+                                            {activity.details.breakdown.map((item, index) => {
+                                                const employerShares = (parseFloat(item.shares) * 0.67).toFixed(5);
+                                                const employerAmount = (parseFloat(item.amount.replace('$', '')) * 0.67).toFixed(2);
 
-                                                    return (
-                                                        <View key={index} style={styles.cryptoRow}>
-                                                            <View style={styles.cryptoName}>
-                                                                <Text style={styles.cryptoText}>{item.name}</Text>
-                                                                <Text style={styles.cryptoSymbol}>{item.symbol}</Text>
-                                                            </View>
-                                                            <Text style={styles.cryptoShares}>{employerShares}</Text>
-                                                            <Text style={styles.cryptoPrice}>{item.price}</Text>
-                                                            <Text style={styles.cryptoAmount}>${employerAmount}</Text>
+                                                return (
+                                                    <View key={index} style={styles.cryptoRow}>
+                                                        <View style={styles.cryptoName}>
+                                                            <Text style={styles.cryptoText}>{item.name}</Text>
+                                                            <Text style={styles.cryptoSymbol}>{item.symbol}</Text>
                                                         </View>
-                                                    );
-                                                })}
+                                                        <Text style={styles.cryptoShares}>{employerShares}</Text>
+                                                        <Text style={styles.cryptoPrice}>{item.price}</Text>
+                                                        <Text style={styles.cryptoAmount}>${employerAmount}</Text>
+                                                    </View>
+                                                );
+                                            })}
 
-                                                <View style={styles.subtotalRow}>
-                                                    <Text style={styles.subtotalLabel}>SUBTOTAL</Text>
-                                                    <Text style={styles.subtotalAmount}>{activity.details.employerAmount}</Text>
-                                                </View>
+                                            <View style={styles.subtotalRow}>
+                                                <Text style={styles.subtotalLabel}>SUBTOTAL</Text>
+                                                <Text style={styles.subtotalAmount}>$232.56</Text>
                                             </View>
                                         </View>
                                     </View>
@@ -482,46 +338,9 @@ export default function DashboardScreen() {
                         ))}
                     </View>
                 </View>
-                {/* Bottom Navigation - Mobile Only */}
-                {!isLargeScreen && (
-                    <View style={styles.bottomNav}>
-                        <View style={styles.bottomNavContainer}>
-                            {tabs.map((tab) => {
-                                const isActive = activeTab === tab;
-                                const getIcon = (tabName: string) => {
-                                    switch (tabName) {
-                                        case 'Overview': return 'home';
-                                        case 'Portfolio': return 'pie-chart';
-                                        case 'Transactions': return 'list';
-                                        case 'Settings': return 'settings';
-                                        default: return 'home';
-                                    }
-                                };
-
-                                return (
-                                    <TouchableOpacity
-                                        key={tab}
-                                        style={styles.bottomNavTab}
-                                        onPress={() => setActiveTab(tab)}
-                                    >
-                                        <Ionicons
-                                            name={getIcon(tab) as any}
-                                            size={20}
-                                            color={isActive ? '#6366f1' : '#9ca3af'}
-                                        />
-                                        <Text style={[
-                                            styles.bottomNavTabText,
-                                            isActive && styles.bottomNavTabTextActive
-                                        ]}>
-                                            {tab}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-                    </View>
-                )}
             </ScrollView>
+
+
         </SafeAreaView>
     );
 }
@@ -536,74 +355,14 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         width: '100%',
     },
-    header: {
-        backgroundColor: 'white',
-        paddingHorizontal: isLargeScreen ? 32 : 24,
-        paddingVertical: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e2e8f0',
-    },
-    logoContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    logo: {
-        width: 40,
-        height: 40,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-    },
-    appName: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#0f172a',
-    },
-    navTabs: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        ...(isLargeScreen ? {} : { display: 'none' }),
-    },
-    navTab: {
-        paddingHorizontal: 24,
-        paddingVertical: 16,
-        borderBottomWidth: 2,
-        borderBottomColor: 'transparent',
-    },
-    activeNavTab: {
-        borderBottomColor: '#14b8a6',
-    },
-    navTabText: {
-        fontSize: 16,
-        color: '#6b7280',
-        fontWeight: '500',
-    },
-    activeNavTabText: {
-        color: '#0f172a',
-    },
-    userSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    userName: {
-        fontSize: 14,
-        color: '#374151',
-        marginRight: 8,
-    },
-    content: {
+    scrollView: {
         flex: 1,
     },
-    scrollContent: {
+    webScrollContent: {
         padding: isLargeScreen ? 32 : 24,
     },
-    webScrollContent: {
-        paddingHorizontal: 32,
-    },
     mobileScrollContent: {
+        padding: 24,
         paddingBottom: 100, // Space for bottom navigation
     },
     securityBanner: {
@@ -823,32 +582,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         minHeight: 200,
     },
-    chartContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    donutChart: {
-        width: 160,
-        height: 160,
-        position: 'relative',
-    },
-    chartSegment: {
-        position: 'absolute',
-        width: 160,
-        height: 160,
-        borderRadius: 80,
-        borderWidth: 20,
-        borderColor: 'transparent',
-    },
-    chartCenter: {
-        position: 'absolute',
-        top: 20,
-        left: 20,
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: 'white',
-    },
     breakdownSection: {
         flex: 1,
     },
@@ -868,43 +601,56 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 8,
+        paddingRight: 4, // Add padding to prevent overflow
     },
     portfolioItemLeft: {
         flexDirection: 'row',
         alignItems: 'center',
+        flex: 1, // Allow to take available space
+        minWidth: 0, // Allow shrinking below content size
     },
     colorDot: {
         width: 12,
         height: 12,
         borderRadius: 6,
         marginRight: 12,
+        flexShrink: 0, // Don't shrink the color dot
     },
     portfolioPercentage: {
         fontSize: 14,
         fontWeight: '600',
         color: '#0f172a',
         marginRight: 8,
+        width: 35, // Slightly smaller width for mobile
+        flexShrink: 0, // Don't shrink percentage
     },
     portfolioName: {
         fontSize: 14,
         color: '#0f172a',
         marginRight: 4,
+        flex: 1, // Take remaining space
+        minWidth: 0, // Allow text truncation
     },
     portfolioSymbol: {
         fontSize: 12,
         color: '#14b8a6',
         fontWeight: '500',
+        marginLeft: 4,
+        flexShrink: 0, // Don't shrink symbol
     },
     portfolioAmount: {
         fontSize: 14,
         fontWeight: '600',
         color: '#0f172a',
+        marginLeft: 8,
+        flexShrink: 0, // Don't shrink amount
+        textAlign: 'right',
     },
     targetSection: {
         marginTop: 24,
-        paddingTop: 16,
+        paddingTop: 20,
         borderTopWidth: 1,
-        borderTopColor: '#e2e8f0',
+        borderTopColor: '#f1f5f9',
     },
     targetTitle: {
         fontSize: 14,
@@ -989,10 +735,10 @@ const styles = StyleSheet.create({
     },
     activityDetails: {
         marginTop: 16,
-        marginLeft: 100, // Align with content after date
+        marginLeft: isLargeScreen ? 100 : 20, // Less margin on mobile
         backgroundColor: '#f8fafc',
         borderRadius: 8,
-        padding: 16,
+        padding: isLargeScreen ? 16 : 12, // Less padding on mobile
     },
     contributionSummary: {
         // Base container
@@ -1012,43 +758,54 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 4,
     },
+    contributionLabel: {
+        fontSize: isLargeScreen ? 12 : 10, // Smaller on mobile
+        fontWeight: '600',
+        color: '#6b7280',
+        flex: 1,
+        textAlign: 'center',
+    },
     cryptoRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 8,
+        paddingVertical: isLargeScreen ? 8 : 6, // Less padding on mobile
         borderBottomWidth: 1,
         borderBottomColor: '#e2e8f0',
     },
     cryptoName: {
         flex: 2,
+        minWidth: 0, // Allow shrinking
     },
     cryptoText: {
-        fontSize: 14,
+        fontSize: isLargeScreen ? 14 : 12, // Smaller on mobile
         color: '#0f172a',
     },
     cryptoSymbol: {
-        fontSize: 12,
+        fontSize: isLargeScreen ? 12 : 10, // Smaller on mobile
         color: '#14b8a6',
         fontWeight: '500',
     },
     cryptoShares: {
         flex: 1,
-        fontSize: 14,
+        fontSize: isLargeScreen ? 14 : 11, // Smaller on mobile
         color: '#6b7280',
-        textAlign: 'right',
+        textAlign: 'center',
+        minWidth: 0, // Allow shrinking
     },
     cryptoPrice: {
         flex: 1,
-        fontSize: 14,
+        fontSize: isLargeScreen ? 14 : 11, // Smaller on mobile
         color: '#6b7280',
-        textAlign: 'right',
+        textAlign: 'center',
+        minWidth: 0, // Allow shrinking
     },
     cryptoAmount: {
         flex: 1,
-        fontSize: 14,
+        fontSize: isLargeScreen ? 14 : 11, // Smaller on mobile
         color: '#0f172a',
         fontWeight: '500',
-        textAlign: 'right',
+        textAlign: 'center',
+        minWidth: 0, // Allow shrinking
     },
     subtotalRow: {
         flexDirection: 'row',
@@ -1073,44 +830,5 @@ const styles = StyleSheet.create({
         paddingTop: 16,
         borderTopWidth: 1,
         borderTopColor: '#e2e8f0',
-    },
-    bottomNav: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'white',
-        borderTopWidth: 1,
-        borderTopColor: '#e5e7eb',
-        paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: -2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 10,
-    },
-    bottomNavContainer: {
-        flexDirection: 'row',
-        paddingTop: 8,
-        paddingHorizontal: 8,
-    },
-    bottomNavTab: {
-        flex: 1,
-        alignItems: 'center',
-        paddingVertical: 6,
-        paddingHorizontal: 4,
-    },
-    bottomNavTabText: {
-        fontSize: 10,
-        color: '#9ca3af',
-        marginTop: 2,
-        fontWeight: '500',
-    },
-    bottomNavTabTextActive: {
-        color: '#6366f1',
-        fontWeight: '600',
     },
 });

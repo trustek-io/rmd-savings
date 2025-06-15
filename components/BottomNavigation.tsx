@@ -1,24 +1,40 @@
 // components/BottomNavigation.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Platform } from 'react-native';
-import { router, usePathname } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width: screenWidth } = Dimensions.get('window');
 const isLargeScreen = screenWidth > 768;
 
 const tabs = [
-    { name: 'dashboard', label: 'Overview', icon: 'home' },
-    { name: 'portfolio', label: 'Portfolio', icon: 'pie-chart' },
-    { name: 'transactions', label: 'Transactions', icon: 'list' },
-    { name: 'settings', label: 'Settings', icon: 'settings' },
+    { name: 'dashboard', label: 'Overview', icon: 'home', route: '/dashboard' },
+    { name: 'portfolio', label: 'Portfolio', icon: 'pie-chart', route: '/(tabs)/portfolio' },
+    { name: 'transactions', label: 'Transactions', icon: 'list', route: '/(tabs)/transactions' },
+    { name: 'settings', label: 'Settings', icon: 'settings', route: '/(tabs)/settings' },
 ];
 
 export default function BottomNavigation() {
+    const router = useRouter();
     const pathname = usePathname();
 
-    // Don't show on large screens or auth/kyc pages
-    if (isLargeScreen || pathname.includes('auth') || pathname.includes('kyc')) {
+    // Debug: Log pathname to see what we're getting
+    console.log('BottomNavigation pathname:', pathname);
+
+    // Don't show on large screens, auth/kyc pages, or index page
+    if (isLargeScreen ||
+        pathname.includes('(auth)') ||
+        pathname.includes('auth') ||
+        pathname.includes('kyc') ||
+        pathname === '/' ||
+        pathname === '/index' ||
+        pathname.includes('login') ||
+        pathname.includes('signup') ||
+        pathname.includes('verify-otp') ||
+        pathname.endsWith('/login') ||
+        pathname.endsWith('/signup') ||
+        pathname.startsWith('/(auth)') ||
+        pathname.startsWith('/auth')) {
         return null;
     }
 
@@ -32,21 +48,8 @@ export default function BottomNavigation() {
 
     const activeTab = getActiveTab();
 
-    const handleTabPress = (tabName: string) => {
-        switch (tabName) {
-            case 'dashboard':
-                router.push('/dashboard');
-                break;
-            case 'portfolio':
-                router.push('/portfolio');
-                break;
-            case 'transactions':
-                router.push('/transactions');
-                break;
-            case 'settings':
-                router.push('/settings');
-                break;
-        }
+    const handleTabPress = (route: string) => {
+        router.push(route);
     };
 
     return (
@@ -59,7 +62,7 @@ export default function BottomNavigation() {
                         <TouchableOpacity
                             key={tab.name}
                             style={styles.navTab}
-                            onPress={() => handleTabPress(tab.name)}
+                            onPress={() => handleTabPress(tab.route)}
                         >
                             <Ionicons
                                 name={tab.icon as any}
